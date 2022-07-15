@@ -1,5 +1,4 @@
 import time
-import adafruit_requests
 
 # Get wifi details and more from a secrets.py file
 try:
@@ -9,6 +8,8 @@ except ImportError:
     raise
     
 hass_server = secrets.get('hass_server_ip_port', '')
+if not hass_server:
+    raise ImportError('Missing hass_server_ip_port in secrets')
 
 # URLs to fetch from
 POOL_TEMPERATURE = f'http://{hass_server}/api/states/sensor.pentair_15_a3_34_pool_temperature'
@@ -18,23 +19,22 @@ LIGHT_FIXTURE = f'http://{hass_server}/api/states/light.pentair_15_a3_34_pool_li
 
 request_headers = { "Authorization": f"Bearer {secrets.get('hass_bearer_token','')}" }
 
-def get_pool_data(requests, magtag):
+def get_pool_data(magtag):
     """Retrieve the data from HomeAssistant about what the pool is doing."""
 
-    if not hass_server:
-        return None
-    
     try:
-        response = requests.get(POOL_TEMPERATURE, headers=request_headers)
+        response = magtag.network.fetch(POOL_TEMPERATURE, headers=request_headers)
         pool_temp = f"{response.json().get('state', 0)} {response.json().get('attributes', {}).get('unit_of_measurement', '°F')}"
+        print('')
 
-        response = requests.get(AIR_TEMPERATURE, headers=request_headers)
+        response = magtag.network.fetch(AIR_TEMPERATURE, headers=request_headers)
         air_temp = f"{response.json().get('state', 0)} {response.json().get('attributes', {}).get('unit_of_measurement', '°F')}"
+        print('')
 
-        response = requests.get(WATER_FEATURE, headers=request_headers)
+        response = magtag.network.fetch(WATER_FEATURE, headers=request_headers)
         fountain = f"{response.json().get('state', 'off')}" != "off"
+        print('')
 
-        magtag.get_local_time()
         now = time.localtime()
 
         return {
@@ -50,8 +50,8 @@ def get_pool_data(requests, magtag):
         traceback.print_exception(err, err, err.__traceback__)
         return None
 
-def change_fountain_state(requests):
+def change_fountain_state(magtag):
     return
 
-def change_light_state(requests):
+def change_light_state(magtag):
     return

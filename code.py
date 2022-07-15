@@ -1,15 +1,9 @@
-import ipaddress
-import ssl
-import socketpool
 import time
 import board
 import alarm
 import json
-import io
 import sys
-import wifi
 
-import adafruit_requests
 from adafruit_display_shapes.rect import Rect
 from adafruit_magtag.magtag import MagTag
 
@@ -49,52 +43,34 @@ magtag.add_text(
 magtag.set_text(f'Refreshing from HomeAssistant...')
 try_refresh(magtag)
 
-# Connect to the wifi, build a socket pool out of the connection, and
-# setup a requests instance to make http requests against it. Depending
-# on how long the magtag's been asleep, this might have to reconnect.
-attempts = 1
-requests = None
-while attempts < 3:
-    try:
-        wifi.radio.connect(ssid=secrets.get('ssid','unknown-ssid'),
-                           password=secrets.get('password','unknown-password'))
-
-        pool = socketpool.SocketPool(wifi.radio)
-        requests = adafruit_requests.Session(pool)
-        break
-    except Exception as err:
-        import traceback
-        traceback.print_exception(err, err, err.__traceback__)
-        print('Failed to connect to wifi')
-        time.sleep(10)
-        attempts += 1
-        
-if not requests:
-
-    magtag.remove_all_text()
-
+try:
+    magtag.network.connect(max_attempts=3)
+except OSError as err:
     # Put up some sort of error message instead of doing the rest of this stuff
+    magtag.remove_all_text()
     magtag.add_text(
         text_font="/fonts/Arial-Bold-12.pcf",
         text_position=(10, 15),
     )
-    magtag.set_text(f'Failed to connect to wifi, will retry again in 30 seconds')
+    magtag.set_text(f'Failed to connect to wifi.\nWill retry again in 30 seconds')
     try_refresh(magtag)
 
     time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+30000)
     alarm.exit_and_deep_sleep_until_alarms(time_alarm)
 
-pool_data = hass_api.get_pool_data(requests, magtag)
-print(pool_data)
+pool_data = hass_api.get_pool_data(magtag)
+
 if not pool_data:
+    print('Failed to get data from HASS: ', end='')
+
     if alarm.sleep_memory[0] != 0:
+        print('Using cached data instead')
         mem = alarm.sleep_memory[0:]
-        print(mem)
         mem_str = mem.decode('utf-8').strip()
-        print(mem_str)
         pool_data = json.loads(mem_str)
         pool_data['updated'] = time.struct_time(pool_data['updated'])
     else:
+        print('No cached data available, using blank data')
         pool_data = {
             'pool': 'unknown',
             'air': 'unknown',
@@ -107,8 +83,11 @@ else:
 
 print(pool_data)
 
+# Clear all of the current text from the screen, which should just
+# be the start-up message.
 magtag.remove_all_text()
 
+# Build up the output screen with all of the data
 magtag.add_text(
     text_font="/fonts/Arial-Bold-12.pcf",
     text_position=(10, 15),
@@ -143,11 +122,10 @@ magtag.add_text(
 )
 magtag.set_text(updated_at, 3, True)
 
-# if pool_data.get('conn_error', False):
-#     magtag.set_text('Failed to retrieve data!', 4, True)
-
 try_refresh(magtag)
 
+# Store the data in the alarm cache so that it can be used again
+# on the next refresh if we fail to connect to HASS.
 pool_data['updated'] = list(pool_data['updated'])
 data_mem = json.dumps(pool_data).encode('utf-8')
 alarm.sleep_memory[0:len(data_mem)] = data_mem

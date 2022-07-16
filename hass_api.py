@@ -7,15 +7,15 @@ except ImportError:
     print('Need to put some secrets in secrets.py')
     raise
     
-hass_server = secrets.get('hass_server_ip_port', '')
-if not hass_server:
-    raise ImportError('Missing hass_server_ip_port in secrets')
+hass_api_url = secrets.get('hass_api_url', '')
+if not hass_api_url:
+    raise ImportError('Missing hass_api_url in secrets')
 
 # URLs to fetch from
-POOL_TEMPERATURE = f'http://{hass_server}/api/states/sensor.pentair_15_a3_34_pool_temperature'
-AIR_TEMPERATURE = f'http://{hass_server}/api/states/sensor.pentair_15_a3_34_air_temperature'
-WATER_FEATURE = f'http://{hass_server}/api/states/switch.pentair_15_a3_34_water_feature'
-LIGHT_FIXTURE = f'http://{hass_server}/api/states/light.pentair_15_a3_34_pool_light'
+POOL_TEMPERATURE = f'{hass_api_url}/sensor.pentair_15_a3_34_pool_temperature'
+AIR_TEMPERATURE = f'{hass_api_url}/sensor.pentair_15_a3_34_air_temperature'
+WATER_FEATURE = f'{hass_api_url}/switch.pentair_15_a3_34_water_feature'
+LIGHT_FIXTURE = f'{hass_api_url}/light.pentair_15_a3_34_pool_light'
 
 request_headers = { "Authorization": f"Bearer {secrets.get('hass_bearer_token','')}" }
 

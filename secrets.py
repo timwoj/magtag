@@ -5,5 +5,5 @@ secrets = {
     'aio_username' : '',
     'aio_key' : '',
     'hass_bearer_token': '',
-    'hass_server_ip_port': '',
+    'hass_api_url': '',
     }

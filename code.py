@@ -2,8 +2,10 @@ import time
 import board
 import alarm
 import json
+import displayio
 
-from adafruit_display_shapes.rect import Rect
+from adafruit_display_text import label
+from adafruit_bitmap_font import bitmap_font
 from adafruit_magtag.magtag import MagTag
 
 import hass_api
@@ -15,90 +17,115 @@ except ImportError:
     print("WiFi secrets are kept in secrets.py, please add them there!")
     raise
 
+# Fonts for display of things
+LABEL_FONT = bitmap_font.load_font('/fonts/Andika-Bold-Stripped-18.bdf')
+DATE_FONT = bitmap_font.load_font('/fonts/Andika-Bold-Stripped-8.bdf')
+
 # How frequently we should automatically update the screen in milliseconds
 TIME_BETWEEN_REFRESHES = 15 * 60 * 1000
 
 # magtag device instance
 magtag = MagTag()
 
-# Put up some sort of error message instead of doing the rest of this stuff
-magtag.add_text(
-    text_font="/fonts/Arial-Bold-12.pcf",
-    text_position=(10, (magtag.graphics.display.height // 2)-1),
-)
-magtag.set_text(f'Refreshing from HomeAssistant...')
+# Build up the display elements so that they can be turned on and off as we
+# do the actual loading of data
+pool_group = displayio.Group()
+pool_labels = [label.Label(font=LABEL_FONT, text="Label: Value",
+                           color=0x000000, anchor_point=(0, 0),
+                           hidden=True) for _ in range(3)]
 
-try:
-    magtag.network.connect(max_attempts=3)
-except OSError as err:
-    # Put up some sort of error message instead of doing the rest of this stuff
-    magtag.remove_all_text()
-    magtag.add_text(
-        text_font="/fonts/Arial-Bold-12.pcf",
-        text_position=(10, (magtag.graphics.display.height // 2)-1),
-        text=f'Failed to connect to wifi.\nWill retry again in 30 seconds')
+y_offset = 10
+for lbl in pool_labels:
+    lbl.anchored_position = (10, y_offset)
+    y_offset += 25
+    pool_group.append(lbl)
 
-    time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+30000)
-    alarm.exit_and_deep_sleep_until_alarms(time_alarm)
+center_label = label.Label(LABEL_FONT, text='Refreshing from HomeAssistant...',
+                           color=0x000000, anchor_point=(0, 0), hidden=True)
+center_label.anchored_position = (10, (magtag.graphics.display.height // 2)-1)
+center_label.hidden = True
 
-pool_data = hass_api.get_pool_data(magtag)
+date_battery_group = displayio.Group()
+date_label = label.Label(DATE_FONT, text="A", color=0x000000,
+                         anchor_point=(1, 0), hidden=True)
+date_label.anchored_position = (magtag.graphics.display.width-5, 5)
+date_battery_group.append(date_label)
 
-if not pool_data:
-    print('Failed to get data from HASS: ', end='')
+battery_label = label.Label(DATE_FONT, text="A", color=0x000000,
+                            anchor_point=(1, 0), hidden=True)
+battery_label.anchored_position = (magtag.graphics.display.width-5, 15)
+date_battery_group.append(battery_label)
 
-    if alarm.sleep_memory[0] != 0:
-        print('Using cached data instead')
-        mem = alarm.sleep_memory[0:]
-        mem_str = mem.decode('utf-8').strip()
-        pool_data = json.loads(mem_str)
-        pool_data['updated'] = time.struct_time(pool_data['updated'])
-    else:
-        print('No cached data available, using blank data')
-        pool_data = {
-            'pool': 'unknown',
-            'air': 'unknown',
-            'fountain': False,
-            'updated': None
-        }
-    pool_data['conn_error'] = True
-else:
-    pool_data['conn_error'] = False
+magtag.splash.append(pool_group)
+magtag.splash.append(center_label)
+magtag.splash.append(date_battery_group)
 
+def refresh_display():
+    # refresh display
+    time.sleep(magtag.display.time_to_refresh + 1)
+    magtag.display.refresh()
+    time.sleep(magtag.display.time_to_refresh + 1)
+
+##### MAIN #####
+
+# Try to connect to the network, but display an error message if it fails.
+# try:
+#     print('connecting to network')
+#     magtag.network.connect(max_attempts=3)
+#     print('success!')
+# except OSError as err:
+#     print('failed to connect')
+#     center_label.text = "Failed to connect to wifi.\nWill retry again in 30 seconds."
+#     center_label.hidden = False
+#     refresh_display()
+
+#     time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+30000)
+#     alarm.exit_and_deep_sleep_until_alarms(time_alarm)
+
+# print('getting local time')
+# magtag.get_local_time()
+# now = time.localtime()
+
+# print('getting pool data')
+# pool_data = hass_api.get_pool_data(magtag)
+
+# if not pool_data:
+#     print('Failed to get data from HASS: ', end='')
+
+#     if alarm.sleep_memory[0] != 0:
+#         print('Using cached data instead')
+#         mem = alarm.sleep_memory[0:]
+#         pool_data = json.loads(mem_str)
+#         mem_str = mem.decode('utf-8').strip()
+#         pool_data['updated'] = time.struct_time(pool_data['updated'])
+#     else:
+#         print('No cached data available, using blank data')
+#         pool_data = {
+#             'pool': 'unknown',
+#             'air': 'unknown',
+#             'fountain': False,
+#             'updated': None
+#         }
+#     pool_data['conn_error'] = True
+# else:
+#     pool_data['conn_error'] = False
+
+pool_data = {'fountain': False, 'air': '113 °F', 'conn_error': False, 'pool': '91 °F'}
+pool_data['updated'] = time.struct_time((2022, 7, 19, 13, 46, 41, 1, 200, -1))
 print(pool_data)
 
-# Clear all of the current text from the screen, which should just
-# be the start-up message.
-print('clearing screen')
-magtag.remove_all_text()
-
-print('adding text')
-# Build up the output screen with all of the data
-magtag.add_text(
-    text_font="/fonts/Arial-Bold-12.pcf",
-    text_position=(10, 15),
-    is_data=False
-)
-magtag.add_text(
-    text_font="/fonts/Arial-Bold-12.pcf",
-    text_position=(10, 35),
-    is_data=False
-)
-magtag.add_text(
-    text_font="/fonts/Arial-Bold-12.pcf",
-    text_position=(10, 55),
-    is_data=False
-)
-magtag.add_text(
-    text_font="/fonts/Arial-Bold-12.pcf",
-    text_position=(10, 75),
-    is_data=False
-)
-print('setting text')
+pool_labels[0].text = f"Pool: {pool_data.get('pool','unknown')}"
+pool_labels[0].hidden = False
+pool_labels[1].text = f"Air: {pool_data.get('air','unknown')}"
+pool_labels[1].hidden = False
 
 if pool_data.get('fountain', False):
     fountain = "On"
 else:
     fountain = "Off"
+
+pool_labels[2].text = f"Water Feature: {fountain}"
+pool_labels[2].hidden = False
 
 when = pool_data.get('updated',None)
 if when:
@@ -106,13 +133,15 @@ if when:
     updated_at = f'{when.tm_mon:0>2}/{when.tm_mday:0>2} {when.tm_hour:0>2}:{when.tm_min:0>2}:{when.tm_sec:0>2}'
 else:
     updated_at = 'unknown'
-    
-magtag.set_text(f"Pool: {pool_data.get('pool','unknown')}", 0, False);
-magtag.set_text(f"Air: {pool_data.get('air','unknown')}", 1, False);
-magtag.set_text(f"Water Feature: {fountain}", 2, False);
-magtag.set_text(updated_at, 3, True)
 
-print('save data')
+date_label.text = updated_at
+date_label.hidden = False
+
+battery_label.text = f'Battery: {magtag.peripherals.battery}'
+battery_label.hidden = False
+
+refresh_display()
+
 # Store the data in the alarm cache so that it can be used again
 # on the next refresh if we fail to connect to HASS.
 pool_data['updated'] = list(pool_data['updated'])

@@ -18,8 +18,8 @@ except ImportError:
     raise
 
 # Fonts for display of things
-LABEL_FONT = bitmap_font.load_font('/fonts/Andika-Bold-Stripped-18.bdf')
-DATE_FONT = bitmap_font.load_font('/fonts/Andika-Bold-Stripped-8.bdf')
+LABEL_FONT = bitmap_font.load_font('/fonts/Andika-Bold-Stripped-18.pcf')
+DATE_FONT = bitmap_font.load_font('/fonts/Andika-Bold-Stripped-8.pcf')
 
 # How frequently we should automatically update the screen in milliseconds
 TIME_BETWEEN_REFRESHES = 15 * 60 * 1000

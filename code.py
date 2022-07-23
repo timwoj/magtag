@@ -83,120 +83,125 @@ magtag.splash.append(button_group)
 
 print(f'built ui elements {time.monotonic()}')
 
-def refresh_display():
-    # refresh display
-    time.sleep(magtag.display.time_to_refresh + 1)
-    magtag.display.refresh()
-
-##### MAIN #####
-
-# Try to connect to the network, but display an error message if it fails.
-# try:
-#     print('connecting to network')
-#     magtag.network.connect(max_attempts=3)
-#     print('success!')
-# except OSError as err:
-#     print('failed to connect')
-#     center_label.text = "Failed to connect to wifi.\nWill retry again in 30 seconds."
-#     center_label.hidden = False
-#     refresh_display()
-
-#     time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+30000)
-#     alarm.exit_and_deep_sleep_until_alarms(time_alarm)
-
-# print('getting local time')
-# magtag.get_local_time()
-# now = time.localtime()
-
-# print('getting pool data')
-# pool_data = hass_api.get_pool_data(magtag)
-
-# if not pool_data:
-#     print('Failed to get data from HASS: ', end='')
-
-#     if alarm.sleep_memory[0] != 0:
-#         print('Using cached data instead')
-#         mem = alarm.sleep_memory[0:]
-#         pool_data = json.loads(mem_str)
-#         mem_str = mem.decode('utf-8').strip()
-#         pool_data['updated'] = time.struct_time(pool_data['updated'])
-#     else:
-#         print('No cached data available, using blank data')
-#         pool_data = {
-#             'pool': 'unknown',
-#             'air': 'unknown',
-#             'fountain': False,
-#             'updated': None
-#         }
-#     pool_data['conn_error'] = True
-# else:
-#     pool_data['conn_error'] = False
-
-pool_data = {'fountain': False, 'air': '113 °F', 'conn_error': False, 'pool': '91 °F'}
-pool_data['updated'] = time.struct_time((2022, 7, 19, 13, 46, 41, 1, 200, -1))
-print(pool_data)
-
-pool_labels[0].text = f"Pool: {pool_data.get('pool','unknown')}"
-pool_labels[0].hidden = False
-pool_labels[1].text = f"Air: {pool_data.get('air','unknown')}"
-pool_labels[1].hidden = False
-
-if pool_data.get('light', False):
-    fountain = "On"
-else:
-    fountain = "Off"
-
-pool_labels[2].text = f"Light: {fountain}"
-pool_labels[2].hidden = False
-
-if pool_data.get('fountain', False):
-    fountain = "On"
-else:
-    fountain = "Off"
-
-pool_labels[3].text = f"Water Feature: {fountain}"
-pool_labels[3].hidden = False
-
-when = pool_data.get('updated',None)
-if when:
-    updated_at = f'{when.tm_mon:0>2}/{when.tm_mday:0>2} {when.tm_hour:0>2}:{when.tm_min:0>2}:{when.tm_sec:0>2}'
-else:
-    updated_at = 'unknown'
-
-date_label.text = updated_at
-date_label.hidden = False
-
-battery_label.text = f'Battery: {magtag.peripherals.battery:.2f} V'
-battery_label.hidden = False
-
-print(f'updated elements {time.monotonic()}')
-
-refresh_display()
-
-print(f'refreshed display {time.monotonic()}')
-
-# Store the data in the alarm cache so that it can be used again
-# on the next refresh if we fail to connect to HASS.
-pool_data['updated'] = list(pool_data['updated'])
-data_mem = json.dumps(pool_data).encode('utf-8')
-alarm.sleep_memory[0:len(data_mem)] = data_mem
-
-print(f'stored old data {time.monotonic()}')
-
 # Deinit all of the buttons since by default the magtag has control
 # over them. You have to deinit them to be able to make alarms
 # using them.
 magtag.peripherals.buttons[0].deinit()
 magtag.peripherals.buttons[1].deinit()
-#magtag.peripherals.buttons[2].deinit()
+magtag.peripherals.buttons[2].deinit()
 #magtag.peripherals.buttons[3].deinit()
 
 a_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_A, value=False, pull=True)
 b_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_B, value=False, pull=True)
-#c_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_C, value=False, pull=True)
+c_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_C, value=False, pull=True)
 #d_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_D, value=False, pull=True)
 time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+TIME_BETWEEN_REFRESHES)
 
-print(f'sleeping {time.monotonic()}')
+def refresh_display():
+    time.sleep(magtag.display.time_to_refresh + 1)
+    magtag.display.refresh()
 
-alarm.exit_and_deep_sleep_until_alarms(a_alarm, b_alarm, time_alarm)#, c_alarm, d_alarm)
+def reload_displayed_data():
+
+    now = time.localtime()
+
+    print('getting pool data')
+    pool_data = hass_api.get_pool_data(magtag)
+
+    if not pool_data:
+        print('Failed to get data from HASS: ', end='')
+
+        if alarm.sleep_memory[0] != 0:
+            print('Using cached data instead')
+            mem = alarm.sleep_memory[0:]
+            pool_data = json.loads(mem_str)
+            mem_str = mem.decode('utf-8').strip()
+            pool_data['updated'] = time.struct_time(pool_data['updated'])
+        else:
+            print('No cached data available, using blank data')
+            pool_data = {
+                'pool': 'unknown',
+                'air': 'unknown',
+                'fountain': False,
+                'updated': None
+            }
+        pool_data['conn_error'] = True
+    else:
+        pool_data['conn_error'] = False
+
+    # pool_data = {'fountain': False, 'air': '113 °F', 'conn_error': False, 'pool': '91 °F'}
+    # pool_data['updated'] = time.struct_time((2022, 7, 19, 13, 46, 41, 1, 200, -1))
+    print(pool_data)
+
+    pool_labels[0].text = f"Pool: {pool_data.get('pool','unknown')}"
+    pool_labels[0].hidden = False
+    pool_labels[1].text = f"Air: {pool_data.get('air','unknown')}"
+    pool_labels[1].hidden = False
+
+    if pool_data.get('light', False):
+        state = "On"
+    else:
+        state = "Off"
+
+    pool_labels[2].text = f"Light: {state}"
+    pool_labels[2].hidden = False
+
+    if pool_data.get('fountain', False):
+        state = "On"
+    else:
+        state = "Off"
+
+    pool_labels[3].text = f"Water Feature: {state}"
+    pool_labels[3].hidden = False
+
+    when = pool_data.get('updated',None)
+    if when:
+        updated_at = f'{when.tm_mon:0>2}/{when.tm_mday:0>2} {when.tm_hour:0>2}:{when.tm_min:0>2}:{when.tm_sec:0>2}'
+    else:
+        updated_at = 'unknown'
+
+    date_label.text = updated_at
+    date_label.hidden = False
+
+    battery_label.text = f'Battery: {magtag.peripherals.battery:.2f} V'
+    battery_label.hidden = False
+
+    # Store the data in the alarm cache so that it can be used again
+    # on the next refresh if we fail to connect to HASS.
+    pool_data['updated'] = list(pool_data['updated'])
+    data_mem = json.dumps(pool_data).encode('utf-8')
+    alarm.sleep_memory[0:len(data_mem)] = data_mem
+
+    print(f'updated elements {time.monotonic()}')
+
+
+##### MAIN #####
+
+# Try to connect to the network, but display an error message if it fails.
+try:
+    magtag.network.connect(max_attempts=3)
+    print('success!')
+except OSError as err:
+    print('failed to connect')
+    time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+30000)
+    alarm.exit_and_deep_sleep_until_alarms(time_alarm)
+
+print('getting local time')
+magtag.get_local_time()
+
+while True:
+
+    if alarm.wake_alarm == b_alarm:
+        # Turn the waterfall on or off
+        hass_api.change_fountain_state(magtag)
+    elif alarm.wake_alarm == c_alarm:
+        # Turn the light on or off
+        hass_api.change_light_state(magtag)
+
+    # Always refresh the data from homeassistant
+    reload_displayed_data()
+    refresh_display()
+
+    print(f'refreshed display {time.monotonic()}')
+
+    alarm.light_sleep_until_alarms(a_alarm, b_alarm, time_alarm, c_alarm)#, d_alarm)

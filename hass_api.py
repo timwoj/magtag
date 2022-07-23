@@ -74,7 +74,21 @@ def get_pool_data(magtag):
         return None
 
 def change_fountain_state(magtag):
-    return
+    try:
+        print('changing fountain state')
+        payload = {"entity_id": "automation.pool_fountain_toggle"}
+        response = magtag.network.fetch(AUTOMATION_URL, headers=request_headers, payload=payload)
+    except Exception as err:
+
+        import traceback
+        traceback.print_exception(err, err, err.__traceback__)
 
 def change_light_state(magtag):
-    return
+    try:
+        print('changing light state')
+        payload = {"entity_id": "automation.pool_light_toggle"}
+        response = magtag.network.fetch(AUTOMATION_URL, headers=request_headers, payload=payload)
+    except Exception as err:
+
+        import traceback
+        traceback.print_exception(err, err, err.__traceback__)

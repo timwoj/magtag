@@ -13,10 +13,6 @@ if not hass_api_url:
 
 # URLs to fetch from
 STATES_URL = f'{hass_api_url}/states'
-POOL_TEMPERATURE = f'{hass_api_url}/states/sensor.pentair_15_a3_34_pool_temperature'
-AIR_TEMPERATURE = f'{hass_api_url}/states/sensor.pentair_15_a3_34_air_temperature'
-WATER_FEATURE = f'{hass_api_url}/states/switch.pentair_15_a3_34_water_feature'
-LIGHT_FIXTURE = f'{hass_api_url}/states/light.pentair_15_a3_34_pool_light'
 AUTOMATION_URL = f'{hass_api_url}/services/automation/trigger'
 
 request_headers = {"Authorization": f"Bearer {secrets.get('hass_bearer_token','')}",
@@ -77,7 +73,9 @@ def change_fountain_state(magtag):
     try:
         print('changing fountain state')
         payload = {"entity_id": "automation.pool_fountain_toggle"}
-        response = magtag.network.fetch(AUTOMATION_URL, headers=request_headers, payload=payload)
+        response = magtag.network.requests.post(AUTOMATION_URL,
+                                                headers=request_headers,
+                                                json=payload)
     except Exception as err:
 
         import traceback
@@ -87,7 +85,9 @@ def change_light_state(magtag):
     try:
         print('changing light state')
         payload = {"entity_id": "automation.pool_light_toggle"}
-        response = magtag.network.fetch(AUTOMATION_URL, headers=request_headers, payload=payload)
+        response = magtag.network.requests.post(AUTOMATION_URL,
+                                                headers=request_headers,
+                                                json=payload)
     except Exception as err:
 
         import traceback

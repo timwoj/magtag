@@ -46,18 +46,18 @@ def get_pool_data(magtag):
             d = air_temp_data[0]
             hass_data['air'] = f"{d.get('state', 0)} {d.get('attributes', {}).get('unit_of_measurement', '°F')}"
 
-        fountain_data = [x for x in data if x['entity_id'] == 'sensor.pentair_15_a3_34_pool_temperature']
+        fountain_data = [x for x in data if x['entity_id'] == 'switch.pentair_15_a3_34_water_feature']
         if fountain_data:
             d = fountain_data[0]
-            if d.get('state','off') == 'Off':
+            if d.get('state','off') == 'off':
                 hass_data['fountain'] = 'Off'
             else:
                 hass_data['fountain'] = 'On'
 
-        light_data = [x for x in data if x['entity_id'] == 'sensor.pentair_15_a3_34_pool_temperature']
+        light_data = [x for x in data if x['entity_id'] == 'light.pentair_15_a3_34_pool_light']
         if light_data:
             d = light_data[0]
-            if d.get('state','off') == 'Off':
+            if d.get('state','off') == 'off':
                 hass_data['light'] = 'Off'
             else:
                 hass_data['light'] = 'On'

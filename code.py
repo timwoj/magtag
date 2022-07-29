@@ -122,7 +122,8 @@ def reload_displayed_data():
             pool_data = {
                 'pool': 'unknown',
                 'air': 'unknown',
-                'fountain': False,
+                'fountain': 'unknown',
+                'light': 'unknown',
                 'updated': None
             }
         pool_data['conn_error'] = True
@@ -138,20 +139,10 @@ def reload_displayed_data():
     pool_labels[1].text = f"Air: {pool_data.get('air','unknown')}"
     pool_labels[1].hidden = False
 
-    if pool_data.get('light', False):
-        state = "On"
-    else:
-        state = "Off"
-
-    pool_labels[2].text = f"Light: {state}"
+    pool_labels[2].text = f"Light: {pool_data.get('light','unknown')}"
     pool_labels[2].hidden = False
 
-    if pool_data.get('fountain', False):
-        state = "On"
-    else:
-        state = "Off"
-
-    pool_labels[3].text = f"Water Feature: {state}"
+    pool_labels[3].text = f"Water Feature: {pool_data.get('fountain','unknown')}"
     pool_labels[3].hidden = False
 
     when = pool_data.get('updated',None)

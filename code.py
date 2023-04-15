@@ -59,20 +59,16 @@ date_battery_group.append(battery_label)
 print(f'2 {time.monotonic()}')
 
 button_group = displayio.Group()
-refresh_button_label = label.Label(DATE_FONT, text="Refresh", color=0x000000,
-                                   anchor_point=(0, 1))
-refresh_button_label.anchored_position = (5, magtag.graphics.display.height-5)
-
 fountain_button_label = label.Label(DATE_FONT, text="Fountain", color=0x000000,
                                     anchor_point=(0, 1))
-fountain_button_label.anchored_position = (75, magtag.graphics.display.height-5)
+fountain_button_label.anchored_position = (5, magtag.graphics.display.height-5)
 
 light_button_label = label.Label(DATE_FONT, text="Light", color=0x000000,
                                  anchor_point=(0, 1))
-light_button_label.anchored_position = (158, magtag.graphics.display.height-2)
+light_button_label.anchored_position = (78, magtag.graphics.display.height-2)
 
 button_group = displayio.Group()
-button_group.append(refresh_button_label)
+#button_group.append(refresh_button_label)
 button_group.append(fountain_button_label)
 button_group.append(light_button_label)
 print(f'3 {time.monotonic()}')
@@ -88,12 +84,12 @@ print(f'built ui elements {time.monotonic()}')
 # using them.
 magtag.peripherals.buttons[0].deinit()
 magtag.peripherals.buttons[1].deinit()
-magtag.peripherals.buttons[2].deinit()
+#magtag.peripherals.buttons[2].deinit()
 #magtag.peripherals.buttons[3].deinit()
 
 a_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_A, value=False, pull=True)
 b_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_B, value=False, pull=True)
-c_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_C, value=False, pull=True)
+#c_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_C, value=False, pull=True)
 #d_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_D, value=False, pull=True)
 time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+TIME_BETWEEN_REFRESHES)
 

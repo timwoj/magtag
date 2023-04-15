@@ -176,19 +176,18 @@ except OSError as err:
 print('getting local time')
 magtag.get_local_time()
 
-while True:
+print(alarm.wake_alarm)
+if type(alarm.wake_alarm) == alarm.pin.PinAlarm and alarm.wake_alarm.pin == board.BUTTON_A:
+    # Turn the waterfall on or off
+    hass_api.change_fountain_state(magtag)
+elif type(alarm.wake_alarm) == alarm.pin.PinAlarm and alarm.wake_alarm.pin == board.BUTTON_B:
+    # Turn the light on or off
+    hass_api.change_light_state(magtag)
 
-    if alarm.wake_alarm == b_alarm:
-        # Turn the waterfall on or off
-        hass_api.change_fountain_state(magtag)
-    elif alarm.wake_alarm == c_alarm:
-        # Turn the light on or off
-        hass_api.change_light_state(magtag)
+# Always refresh the data from homeassistant
+reload_displayed_data()
+refresh_display()
 
-    # Always refresh the data from homeassistant
-    reload_displayed_data()
-    refresh_display()
+print(f'refreshed display {time.monotonic()}')
 
-    print(f'refreshed display {time.monotonic()}')
-
-    alarm.light_sleep_until_alarms(a_alarm, b_alarm, time_alarm, c_alarm)#, d_alarm)
+alarm.exit_and_deep_sleep_until_alarms(a_alarm, b_alarm, time_alarm)

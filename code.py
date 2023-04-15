@@ -114,8 +114,8 @@ def reload_displayed_data():
         if alarm.sleep_memory[0] != 0:
             print('Using cached data instead')
             mem = alarm.sleep_memory[0:]
-            pool_data = json.loads(mem_str)
             mem_str = mem.decode('utf-8').strip()
+            pool_data = json.loads(mem_str)
             pool_data['updated'] = time.struct_time(pool_data['updated'])
         else:
             print('No cached data available, using blank data')

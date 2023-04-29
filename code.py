@@ -106,13 +106,18 @@ def reload_displayed_data():
     if not pool_data:
         print('Failed to get data from HASS: ', end='')
 
-        if alarm.sleep_memory[0] != 0:
+        if alarm.sleep_memory and alarm.sleep_memory[0]:
             print('Using cached data instead')
             mem = alarm.sleep_memory[0:]
             mem_str = mem.decode('utf-8').strip()
-            pool_data = json.loads(mem_str)
-            pool_data['updated'] = time.struct_time(pool_data['updated'])
-        else:
+            try:
+                pool_data = json.loads(mem_str)
+                pool_data['updated'] = time.struct_time(pool_data['updated'])
+            except:
+                print('Exception while loading sleep_memory')
+                pool_data = None
+
+        if not pool_data:
             print('No cached data available, using blank data')
             pool_data = {
                 'pool': 'unknown',
@@ -121,6 +126,7 @@ def reload_displayed_data():
                 'light': 'unknown',
                 'updated': None
             }
+
         pool_data['conn_error'] = True
     else:
         pool_data['conn_error'] = False
@@ -154,11 +160,15 @@ def reload_displayed_data():
 
     # Store the data in the alarm cache so that it can be used again
     # on the next refresh if we fail to connect to HASS.
-    pool_data['updated'] = list(pool_data['updated'])
-    data_mem = json.dumps(pool_data).encode('utf-8')
-    alarm.sleep_memory[0:len(data_mem)] = data_mem
+    if pool_data:
+        pool_data['updated'] = list(pool_data['updated'])
+        data_mem = json.dumps(pool_data).encode('utf-8')
+        alarm.sleep_memory[0:len(data_mem)] = data_mem
+    else:
+        pool_data = {'conn_error': True}
 
     print(f'updated elements {time.monotonic()}')
+    return not pool_data['conn_error']
 
 
 ##### MAIN #####
@@ -168,11 +178,11 @@ try:
     magtag.network.connect(max_attempts=3)
     print('success!')
 except OSError as err:
-    print('failed to connect')
-    time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+30000)
+    print('Failed to connect to wifi')
+    # If we failed to connect, sleep for 30 seconds and try again.
+    time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+30)
     alarm.exit_and_deep_sleep_until_alarms(time_alarm)
 
-print('getting local time')
 magtag.get_local_time()
 
 if isinstance(alarm.wake_alarm, alarm.pin.PinAlarm):
@@ -184,10 +194,16 @@ if isinstance(alarm.wake_alarm, alarm.pin.PinAlarm):
         hass_api.change_light_state(magtag)
 
 # Always refresh the data from homeassistant
-reload_displayed_data()
+data_good = reload_displayed_data()
 refresh_display()
 
+# If we failed to get pool data, refresh early
+if not data_good:
+    TIME_BETWEEN_REFRESHES = 10
+
 print(f'refreshed display {time.monotonic()}')
+print(f'refreshing again in {TIME_BETWEEN_REFRESHES} seconds')
 
 time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+TIME_BETWEEN_REFRESHES)
+
 alarm.exit_and_deep_sleep_until_alarms(a_alarm, b_alarm, time_alarm)

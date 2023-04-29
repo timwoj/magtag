@@ -21,8 +21,8 @@ except ImportError:
 LABEL_FONT = bitmap_font.load_font('/fonts/Andika-Bold-Stripped-18.pcf')
 DATE_FONT = bitmap_font.load_font('/fonts/Andika-Bold-Stripped-8.pcf')
 
-# How frequently we should automatically update the screen in milliseconds
-TIME_BETWEEN_REFRESHES = 15 * 60 * 1000
+# How frequently we should automatically update the screen in seconds
+TIME_BETWEEN_REFRESHES = 30 * 60
 
 # magtag device instance
 magtag = MagTag()
@@ -91,7 +91,6 @@ a_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_A, value=False, pull=True)
 b_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_B, value=False, pull=True)
 #c_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_C, value=False, pull=True)
 #d_alarm = alarm.pin.PinAlarm(pin=board.BUTTON_D, value=False, pull=True)
-time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+TIME_BETWEEN_REFRESHES)
 
 def refresh_display():
     time.sleep(magtag.display.time_to_refresh + 1)
@@ -190,4 +189,5 @@ refresh_display()
 
 print(f'refreshed display {time.monotonic()}')
 
+time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic()+TIME_BETWEEN_REFRESHES)
 alarm.exit_and_deep_sleep_until_alarms(a_alarm, b_alarm, time_alarm)

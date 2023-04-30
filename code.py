@@ -124,16 +124,12 @@ def reload_displayed_data():
                 'air': 'unknown',
                 'fountain': 'unknown',
                 'light': 'unknown',
-                'updated': None
+                'updated': now
             }
 
         pool_data['conn_error'] = True
     else:
         pool_data['conn_error'] = False
-
-    # pool_data = {'fountain': False, 'air': '113 °F', 'conn_error': False, 'pool': '91 °F'}
-    # pool_data['updated'] = time.struct_time((2022, 7, 19, 13, 46, 41, 1, 200, -1))
-    print(pool_data)
 
     pool_labels[0].text = f"Pool: {pool_data.get('pool','unknown')}"
     pool_labels[0].hidden = False
@@ -147,11 +143,7 @@ def reload_displayed_data():
     pool_labels[3].hidden = False
 
     when = pool_data.get('updated',None)
-    if when:
-        updated_at = f'{when.tm_mon:0>2}/{when.tm_mday:0>2} {when.tm_hour:0>2}:{when.tm_min:0>2}:{when.tm_sec:0>2}'
-    else:
-        updated_at = 'unknown'
-
+    updated_at = f'{when.tm_mon:0>2}/{when.tm_mday:0>2} {when.tm_hour:0>2}:{when.tm_min:0>2}:{when.tm_sec:0>2}'
     date_label.text = updated_at
     date_label.hidden = False
 
